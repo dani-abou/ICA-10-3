@@ -10,6 +10,8 @@ import {
   Stat,
   StatLabel,
   StatNumber,
+  Toast,
+  useToast,
   VStack,
   Wrap,
   WrapItem,
@@ -19,7 +21,13 @@ import './App.css';
 import { getAllTranscripts } from './lib/client';
 import { CourseGrade, Transcript } from './types/transcript';
 
-function GradeView({ grade }: { grade: CourseGrade }) {
+function GradeView({
+  grade,
+  setTriggerToast,
+}: {
+  grade: CourseGrade;
+  setTriggerToast: () => void;
+}) {
   return (
     <Stat>
       <StatLabel>{grade.course}</StatLabel>
@@ -28,6 +36,7 @@ function GradeView({ grade }: { grade: CourseGrade }) {
           defaultValue={`${grade.grade}`}
           onSubmit={newValue => {
             console.log(`Want to update grade to ${newValue}`);
+            setTriggerToast();
           }}>
           <EditablePreview />
           <EditableInput />
@@ -36,14 +45,20 @@ function GradeView({ grade }: { grade: CourseGrade }) {
     </Stat>
   );
 }
-function TranscriptView({ transcript }: { transcript: Transcript }) {
+function TranscriptView({
+  transcript,
+  setTriggerToast,
+}: {
+  transcript: Transcript;
+  setTriggerToast: () => void;
+}) {
   return (
     <Box boxSize='sm' borderWidth='1px' borderRadius='lg' overflow='hidden'>
       <Heading as='h4'>
         {transcript.student.studentName} #{transcript.student.studentID}
         <VStack>
           {transcript.grades.map((eachGrade, eachGradeIndex) => (
-            <GradeView key={eachGradeIndex} grade={eachGrade} />
+            <GradeView key={eachGradeIndex} grade={eachGrade} setTriggerToast={setTriggerToast} />
           ))}
         </VStack>
       </Heading>
@@ -67,6 +82,7 @@ const sorter = (
   sortingFunctionID: string | undefined,
   isAscending: boolean,
 ) => {
+  console.log('sorting...');
   if (sortingFunctionID === undefined) return 0;
   const getSortByValue = sortingFunctions[sortingFunctionID];
   if (getSortByValue(valueA) == getSortByValue(valueB)) return 0;
@@ -89,8 +105,20 @@ function App() {
       setTranscripts(await getAllTranscripts());
     }
     fetchTranscripts();
+    console.log('useEffect called');
   }, []);
-
+  const toast = useToast();
+  const [triggerToast, setTriggerToast] = useState<boolean>(false);
+  useEffect(() => {
+    toast({
+      title: 'Success!',
+      description: 'Test',
+      status: 'success',
+      duration: 9000,
+      isClosable: true,
+    });
+  }, [triggerToast]);
+  const triggerTheToast = () => setTriggerToast(prev => !prev);
   return (
     <div className='App'>
       <ChakraProvider>
@@ -110,7 +138,10 @@ function App() {
           </Select>
           <Select
             onChange={option => {
-              console.log(`Selected sort order ${option.target.value}`);
+              setSortBy(prev => ({
+                ...prev,
+                isAscending: option.target.value === 'asc',
+              }));
             }}>
             <option value='asc'>Ascending</option>
             <option value='desc'>Descending</option>
@@ -121,7 +152,7 @@ function App() {
             .sort((a, b) => sorter(a, b, sortBy.sortingFunctionID, sortBy.isAscending))
             .map(eachTranscript => (
               <WrapItem key={eachTranscript.student.studentID}>
-                <TranscriptView transcript={eachTranscript} />
+                <TranscriptView transcript={eachTranscript} setTriggerToast={triggerTheToast} />
               </WrapItem>
             ))}
         </Wrap>
