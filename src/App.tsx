@@ -110,7 +110,10 @@ function App() {
           </Select>
           <Select
             onChange={option => {
-              console.log(`Selected sort order ${option.target.value}`);
+              setSortBy(prev => ({
+                ...prev,
+                isAscending: option.target.value === 'asc' ? true : false,
+              }));
             }}>
             <option value='asc'>Ascending</option>
             <option value='desc'>Descending</option>
