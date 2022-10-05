@@ -67,28 +67,28 @@ function TranscriptView({
     <Box boxSize='sm' borderWidth='1px' borderRadius='lg' overflow='scroll' border='2px'>
       <Heading as='h4' paddingTop='1.5' paddingBottom='1.5'>
         {transcript.student.studentName} #{transcript.student.studentID}
-        <HStack>
-          <Input
-            placeholder='New Course Name'
-            value={courseName}
-            onChange={e => setCourseName(e.target.value)}
-          />
-          <Input
-            placeholder='New Grade'
-            value={newGrade}
-            onChange={e => setNewGrade(e.target.value)}
-          />
-          <Button
-            onClick={async () => {
-              await addGrade(transcript.student.studentID, courseName, parseInt(newGrade));
-              setCourseName('');
-              setNewGrade('');
-              setFetchTranscript(true);
-            }}>
-            Add grade
-          </Button>
-        </HStack>
         <VStack>
+          <HStack padding='1.5'>
+            <Input
+              placeholder='Course Name'
+              value={courseName}
+              onChange={e => setCourseName(e.target.value)}
+            />
+            <Input
+              placeholder='Grade'
+              value={newGrade}
+              onChange={e => setNewGrade(e.target.value)}
+            />
+            <Button
+              onClick={async () => {
+                await addGrade(transcript.student.studentID, courseName, parseInt(newGrade));
+                setCourseName('');
+                setNewGrade('');
+                setFetchTranscript(true);
+              }}>
+              Add
+            </Button>
+          </HStack>
           {transcript.grades.map((eachGrade, eachGradeIndex) => (
             <GradeView key={eachGradeIndex} grade={eachGrade} />
           ))}
@@ -156,40 +156,42 @@ function App() {
   return (
     <div className='App'>
       <ChakraProvider>
-        <HStack spacing='24px' margin='24px' justifyContent='center'>
-          <span>Sort by:</span>
-          <Select
-            placeholder='Select a sort order'
-            onChange={option => {
-              setSortBy(prev => ({
-                ...prev,
-                sortingFunctionID: option.target.value,
-              }));
-            }}>
-            <option value='id'>Student ID</option>
-            <option value='name'>Student name</option>
-            <option value='average'>Average Grade</option>
-          </Select>
-          <Select
-            onChange={option => {
-              setSortBy(prev => ({
-                ...prev,
-                isAscending: option.target.value === 'asc',
-              }));
-            }}>
-            <option value='asc'>Ascending</option>
-            <option value='desc'>Descending</option>
-          </Select>
-        </HStack>
-        <HStack>
-          <Input
-            placeholder='New student name'
-            value={newStudentInput}
-            onChange={e => setNewStudentInput(e.target.value)}
-          />
-          <Button onClick={addNewStudent}>Add student</Button>
-        </HStack>
-        <Wrap>
+        <VStack>
+          <HStack spacing='24px' margin='24px' justifyContent='center'>
+            <span>Sort by:</span>
+            <Select
+              placeholder='Select a sort order'
+              onChange={option => {
+                setSortBy(prev => ({
+                  ...prev,
+                  sortingFunctionID: option.target.value,
+                }));
+              }}>
+              <option value='id'>Student ID</option>
+              <option value='name'>Student name</option>
+              <option value='average'>Average Grade</option>
+            </Select>
+            <Select
+              onChange={option => {
+                setSortBy(prev => ({
+                  ...prev,
+                  isAscending: option.target.value === 'asc',
+                }));
+              }}>
+              <option value='asc'>Ascending</option>
+              <option value='desc'>Descending</option>
+            </Select>
+          </HStack>
+          <HStack>
+            <Input
+              placeholder='New student name'
+              value={newStudentInput}
+              onChange={e => setNewStudentInput(e.target.value)}
+            />
+            <Button onClick={addNewStudent}>Add student</Button>
+          </HStack>
+        </VStack>
+        <Wrap justify='center' paddingTop='2'>
           {transcripts
             .sort((a, b) => sorter(a, b, sortBy.sortingFunctionID, sortBy.isAscending))
             .map(eachTranscript => (
