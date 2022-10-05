@@ -19,14 +19,14 @@ import {
 import React, { useEffect, useState } from 'react';
 import './App.css';
 import { getAllTranscripts } from './lib/client';
-import { CourseGrade, Transcript } from './types/transcript';
+import { Course, CourseGrade, Transcript } from './types/transcript';
 
 function GradeView({
   grade,
-  setTriggerToast,
+  updateGrade,
 }: {
   grade: CourseGrade;
-  setTriggerToast: () => void;
+  updateGrade: (newValue: number) => void;
 }) {
   return (
     <Stat>
@@ -36,7 +36,7 @@ function GradeView({
           defaultValue={`${grade.grade}`}
           onSubmit={newValue => {
             console.log(`Want to update grade to ${newValue}`);
-            setTriggerToast();
+            updateGrade(parseInt(newValue));
           }}>
           <EditablePreview />
           <EditableInput />
@@ -47,18 +47,34 @@ function GradeView({
 }
 function TranscriptView({
   transcript,
-  setTriggerToast,
+  updateTranscript,
 }: {
   transcript: Transcript;
-  setTriggerToast: () => void;
+  updateTranscript: (course: Course, newValue: number) => void;
 }) {
+  const toast = useToast();
+
+  useEffect(() => {
+    console.log('printing toast');
+    toast({
+      title: 'Account created.',
+      description: "We've created your account for you.",
+      status: 'success',
+      duration: 9000,
+      isClosable: true,
+    });
+  }, [transcript, toast]);
   return (
     <Box boxSize='sm' borderWidth='1px' borderRadius='lg' overflow='hidden'>
       <Heading as='h4'>
         {transcript.student.studentName} #{transcript.student.studentID}
         <VStack>
           {transcript.grades.map((eachGrade, eachGradeIndex) => (
-            <GradeView key={eachGradeIndex} grade={eachGrade} setTriggerToast={setTriggerToast} />
+            <GradeView
+              key={eachGradeIndex}
+              grade={eachGrade}
+              updateGrade={(newValue: number) => updateTranscript(eachGrade.course, newValue)}
+            />
           ))}
         </VStack>
       </Heading>
@@ -83,7 +99,7 @@ const sorter = (
   isAscending: boolean,
 ) => {
   console.log('sorting...');
-  if (sortingFunctionID === undefined) return 0;
+  if (sortingFunctionID === undefined || !sortingFunctions[sortingFunctionID]) return 0;
   const getSortByValue = sortingFunctions[sortingFunctionID];
   if (getSortByValue(valueA) == getSortByValue(valueB)) return 0;
   if (isAscending && getSortByValue(valueA) > getSortByValue(valueB)) return 1;
@@ -107,18 +123,20 @@ function App() {
     fetchTranscripts();
     console.log('useEffect called');
   }, []);
-  const toast = useToast();
-  const [triggerToast, setTriggerToast] = useState<boolean>(false);
-  useEffect(() => {
-    toast({
-      title: 'Success!',
-      description: 'Test',
-      status: 'success',
-      duration: 9000,
-      isClosable: true,
+
+  const updateTranscript = (studentID: number, course: Course, newValue: number) => {
+    setTranscripts((prev: Transcript[]) => {
+      const transcriptIndex: number = prev.findIndex(
+        currentTrsncript => currentTrsncript.student.studentID === studentID,
+      );
+      const courseIndex = prev[transcriptIndex].grades.findIndex(
+        eachGrade => eachGrade.course === course,
+      );
+      prev[transcriptIndex].grades[courseIndex].grade = newValue;
+      return prev;
     });
-  }, [triggerToast]);
-  const triggerTheToast = () => setTriggerToast(prev => !prev);
+  };
+
   return (
     <div className='App'>
       <ChakraProvider>
@@ -152,7 +170,12 @@ function App() {
             .sort((a, b) => sorter(a, b, sortBy.sortingFunctionID, sortBy.isAscending))
             .map(eachTranscript => (
               <WrapItem key={eachTranscript.student.studentID}>
-                <TranscriptView transcript={eachTranscript} setTriggerToast={triggerTheToast} />
+                <TranscriptView
+                  transcript={eachTranscript}
+                  updateTranscript={(course: Course, newValue: number) =>
+                    updateTranscript(eachTranscript.student.studentID, course, newValue)
+                  }
+                />
               </WrapItem>
             ))}
         </Wrap>
