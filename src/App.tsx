@@ -1,12 +1,14 @@
 import {
   Box,
   ChakraProvider,
+  Divider,
   Editable,
   EditableInput,
   EditablePreview,
   Heading,
   HStack,
   Select,
+  StackDivider,
   Stat,
   StatLabel,
   StatNumber,
@@ -62,8 +64,8 @@ function TranscriptView({
   const [newGrade, setNewGrade] = useState<string>('');
 
   return (
-    <Box boxSize='sm' borderWidth='1px' borderRadius='lg' overflow='hidden'>
-      <Heading as='h4'>
+    <Box boxSize='sm' borderWidth='1px' borderRadius='lg' overflow='scroll' border='2px'>
+      <Heading as='h4' paddingTop='1.5' paddingBottom='1.5'>
         {transcript.student.studentName} #{transcript.student.studentID}
         <HStack>
           <Input
@@ -154,7 +156,7 @@ function App() {
   return (
     <div className='App'>
       <ChakraProvider>
-        <HStack spacing='24px'>
+        <HStack spacing='24px' margin='24px' justifyContent='center'>
           <span>Sort by:</span>
           <Select
             placeholder='Select a sort order'
