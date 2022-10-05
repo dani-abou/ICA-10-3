@@ -11,6 +11,7 @@ import {
   StatLabel,
   StatNumber,
   Toast,
+  ToastId,
   useToast,
   VStack,
   Wrap,
@@ -25,6 +26,7 @@ import { addGrade, addStudent, getAllTranscripts } from './lib/client';
 import { Course, CourseGrade, Transcript } from './types/transcript';
 
 function GradeView({ grade }: { grade: CourseGrade }) {
+  const toast = useToast();
   return (
     <Stat>
       <StatLabel>{grade.course}</StatLabel>
@@ -33,8 +35,15 @@ function GradeView({ grade }: { grade: CourseGrade }) {
           defaultValue={`${grade.grade}`}
           onSubmit={newValue => {
             console.log(`Want to update grade to ${newValue}`);
-            // updateGrade(newValue);
-          }}>
+            toast({
+              title: 'Grade updated!',
+              description: "We've updated the grade for you.",
+              status: 'success',
+              duration: 3000,
+              isClosable: true,
+            });
+          }}
+          submitOnBlur={false}>
           <EditablePreview />
           <EditableInput />
         </Editable>
