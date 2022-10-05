@@ -15,19 +15,16 @@ import {
   VStack,
   Wrap,
   WrapItem,
+  Input,
+  Button,
 } from '@chakra-ui/react';
+import { nanoid } from 'nanoid';
 import React, { useEffect, useState } from 'react';
 import './App.css';
-import { getAllTranscripts } from './lib/client';
+import { addGrade, addStudent, getAllTranscripts } from './lib/client';
 import { Course, CourseGrade, Transcript } from './types/transcript';
 
-function GradeView({
-  grade,
-  updateGrade,
-}: {
-  grade: CourseGrade;
-  updateGrade: (newValue: number) => void;
-}) {
+function GradeView({ grade }: { grade: CourseGrade }) {
   return (
     <Stat>
       <StatLabel>{grade.course}</StatLabel>
@@ -36,7 +33,7 @@ function GradeView({
           defaultValue={`${grade.grade}`}
           onSubmit={newValue => {
             console.log(`Want to update grade to ${newValue}`);
-            updateGrade(parseInt(newValue));
+            // updateGrade(newValue);
           }}>
           <EditablePreview />
           <EditableInput />
@@ -47,34 +44,42 @@ function GradeView({
 }
 function TranscriptView({
   transcript,
-  updateTranscript,
+  setFetchTranscript,
 }: {
   transcript: Transcript;
-  updateTranscript: (course: Course, newValue: number) => void;
+  setFetchTranscript: (newVal: boolean) => void;
 }) {
-  const toast = useToast();
+  const [courseName, setCourseName] = useState<string>('');
+  const [newGrade, setNewGrade] = useState<string>('');
 
-  useEffect(() => {
-    console.log('printing toast');
-    toast({
-      title: 'Account created.',
-      description: "We've created your account for you.",
-      status: 'success',
-      duration: 9000,
-      isClosable: true,
-    });
-  }, [transcript, toast]);
   return (
     <Box boxSize='sm' borderWidth='1px' borderRadius='lg' overflow='hidden'>
       <Heading as='h4'>
         {transcript.student.studentName} #{transcript.student.studentID}
+        <HStack>
+          <Input
+            placeholder='New Course Name'
+            value={courseName}
+            onChange={e => setCourseName(e.target.value)}
+          />
+          <Input
+            placeholder='New Grade'
+            value={newGrade}
+            onChange={e => setNewGrade(e.target.value)}
+          />
+          <Button
+            onClick={async () => {
+              await addGrade(transcript.student.studentID, courseName, parseInt(newGrade));
+              setCourseName('');
+              setNewGrade('');
+              setFetchTranscript(true);
+            }}>
+            Add grade
+          </Button>
+        </HStack>
         <VStack>
           {transcript.grades.map((eachGrade, eachGradeIndex) => (
-            <GradeView
-              key={eachGradeIndex}
-              grade={eachGrade}
-              updateGrade={(newValue: number) => updateTranscript(eachGrade.course, newValue)}
-            />
+            <GradeView key={eachGradeIndex} grade={eachGrade} />
           ))}
         </VStack>
       </Heading>
@@ -116,26 +121,26 @@ function App() {
     sortingFunctionID: undefined,
     isAscending: true,
   });
+
+  const [newStudentInput, setNewStudentInput] = useState<string>('');
+  const [fetchTranscriptsState, setFetchTranscript] = useState<boolean>(true);
+
+  const addNewStudent = async () => {
+    await addStudent(newStudentInput);
+    setFetchTranscript(true);
+    setNewStudentInput('');
+  };
+
   useEffect(() => {
     async function fetchTranscripts() {
       setTranscripts(await getAllTranscripts());
+      setFetchTranscript(false);
     }
-    fetchTranscripts();
+    if (fetchTranscriptsState) {
+      fetchTranscripts();
+    }
     console.log('useEffect called');
-  }, []);
-
-  const updateTranscript = (studentID: number, course: Course, newValue: number) => {
-    setTranscripts((prev: Transcript[]) => {
-      const transcriptIndex: number = prev.findIndex(
-        currentTrsncript => currentTrsncript.student.studentID === studentID,
-      );
-      const courseIndex = prev[transcriptIndex].grades.findIndex(
-        eachGrade => eachGrade.course === course,
-      );
-      prev[transcriptIndex].grades[courseIndex].grade = newValue;
-      return prev;
-    });
-  };
+  }, [fetchTranscriptsState]);
 
   return (
     <div className='App'>
@@ -165,6 +170,14 @@ function App() {
             <option value='desc'>Descending</option>
           </Select>
         </HStack>
+        <HStack>
+          <Input
+            placeholder='New student name'
+            value={newStudentInput}
+            onChange={e => setNewStudentInput(e.target.value)}
+          />
+          <Button onClick={addNewStudent}>Add student</Button>
+        </HStack>
         <Wrap>
           {transcripts
             .sort((a, b) => sorter(a, b, sortBy.sortingFunctionID, sortBy.isAscending))
@@ -172,9 +185,7 @@ function App() {
               <WrapItem key={eachTranscript.student.studentID}>
                 <TranscriptView
                   transcript={eachTranscript}
-                  updateTranscript={(course: Course, newValue: number) =>
-                    updateTranscript(eachTranscript.student.studentID, course, newValue)
-                  }
+                  setFetchTranscript={setFetchTranscript}
                 />
               </WrapItem>
             ))}
